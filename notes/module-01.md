@@ -5,14 +5,63 @@
 ### What is it?
 Stateless containerization software that is isolated from host.
 ### Why we use it?
-Because it contains most data engineering technologies pre-installed and can be easily run on different platforms and hosts.
+Because it contains most data engineering technologies pre-installed and can be easily run on different platforms and hosts. (It is stateless and isiolated meaning it does not store memory )
+
+Reproducibility: Same environment everywhere
+Isolation: Applications run independently
+Portability: Run anywhere Docker is installed
 ### How does it fit in a data pipeline?
-- Postgresql
-- Airflow
+- Integration tests: CI/CD pipelines
+- Running pipelines on the cloud: AWS Batch, Kubernetes jobs
+- Spark: Analytics engine for large-scale data processing
+- Serverless: AWS Lambda, Google Functions
+
+## Volumes
+
+### What is it?
+A volume is a bridge that lets Docker containers read and write files stored outside the container.
+Volumes are a way of storing data to preserve it for container use.
+### Why we use it?
+Volumes provide persistent storage. They allow data to survive container recreation and enable sharing files between the host machine and containers.
+
+Because Docker container are stateless, data will be automatically deleted once we exit the container. Volumes allows for us to be able to still access this saved data and map it to different locations on host machine.
+
+### How does it fit in a data pipeline?
+- Postgres data
+- Airflow metadata
+- Kafka logs
+- Spark checkpoints
+- S3 objects
 
 ## Data Pipeline
 
-## What is it
+### What is it?
 Is any script or similar that takes an input data / dataset and moves it to another location while processesing it along the way. 
-
 For example: ![alt text](image.png)
+
+## Sys Arguments (python)
+The arguments that are passed when running the script (sys.argv)
+
+For example:
+```bash
+python3 pipeline.py 2026
+```
+```python
+sys.argv[1] = 2026
+```
+## Virtual environments / UV
+We use virtual environments to install code dependencies isolated because we might have multiple projects requiring different versions of the same package.
+
+UV is a modern python package and project manager written in Rust and handles virtual environments automatically.
+
+For example:
+```bash
+uv init --python=3.13
+uv run python -V
+# Python 3.13.13
+python -V
+# Python 3.14.example
+uv add pandas pyarrow
+# pandas, pyarrow -> pyproject.toml .venv
+```
+
