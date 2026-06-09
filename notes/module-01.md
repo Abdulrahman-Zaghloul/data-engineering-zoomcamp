@@ -33,6 +33,13 @@ Because Docker container are stateless, data will be automatically deleted once 
 - Spark checkpoints
 - S3 objects
 
+We may run:
+```bash
+docker run --rm -v $(pwd):/app test:latest
+# pwd reflects the location where the docker file and development script are located.
+```
+To link the changes we make to the local script copy to the script in the container in real time without needing to rebuiild.
+
 ## Data Pipeline
 
 ### What is it?
@@ -52,7 +59,7 @@ sys.argv[1] = 2026
 ## Virtual environments / UV
 We use virtual environments to install code dependencies isolated because we might have multiple projects requiring different versions of the same package.
 
-UV is a modern python package and project manager written in Rust and handles virtual environments automatically.
+UV is a modern python package and project manager written in Rust and handles virtual environments automatically and super quickly.
 
 For example:
 ```bash
@@ -63,5 +70,34 @@ python -V
 # Python 3.14.example
 uv add pandas pyarrow
 # pandas, pyarrow -> pyproject.toml .venv
+```
+OR
+
+```dockerfile
+# Docker and uv example
+# We may be able to get the code running with pip but in order to maintain the code reproducability aspect we are better off using uv or venv
+
+# Start with slim Python 3.13 image
+FROM python:3.13.10-slim
+
+# Copy uv binary from official uv image (multi-stage build pattern)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
+
+# Set working directory
+WORKDIR /app
+
+# Add virtual environment to PATH so we can use installed packages
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy dependency files first (better layer caching)
+COPY "pyproject.toml" "uv.lock" ".python-version" ./
+# Install dependencies from lock file (ensures reproducible builds)
+RUN uv sync --locked
+
+# Copy application code
+COPY pipeline.py pipeline.py
+
+# Set entry point
+ENTRYPOINT ["uv", "run", "python", "pipeline.py"]
 ```
 
