@@ -20,11 +20,15 @@ Portability: Run anywhere Docker is installed
 
 ### What is it?
 A volume is a bridge that lets Docker containers read and write files stored outside the container.
+
 Volumes are a way of storing data to preserve it for container use.
 ### Why we use it?
 Volumes provide persistent storage. They allow data to survive container recreation and enable sharing files between the host machine and containers.
 
 Because Docker container are stateless, data will be automatically deleted once we exit the container. Volumes allows for us to be able to still access this saved data and map it to different locations on host machine.
+
+Named volume (name:/path): Managed by Docker, easier
+Bind mount (/host/path:/container/path): Direct mapping to host filesystem, more control
 
 ### How does it fit in a data pipeline?
 - Postgres data
@@ -35,8 +39,9 @@ Because Docker container are stateless, data will be automatically deleted once 
 
 We may run:
 ```bash
-docker run --rm -v $(pwd):/app test:latest
-# pwd reflects the location where the docker file and development script are located.
+docker run --rm -v $(pwd):/app test:latest # this is reffered to as a bind mount
+# pwd reflects the location where we will share to the container in /app.
+docker run --rm -v ny_taxi_data:var/lib/postgresql/data # this creates a storage (or named volume) which will persist even after we exit container.
 ```
 To link the changes we make to the local script copy to the script in the container in real time without needing to rebuiild.
 
@@ -100,4 +105,60 @@ COPY pipeline.py pipeline.py
 # Set entry point
 ENTRYPOINT ["uv", "run", "python", "pipeline.py"]
 ```
+
+## Postgres with Docker
+Running Postgres with Docker is very simple and doesn't need any installation steps.
+We just have to run it with environment variables.
+
+For example
+```bash
+docker run -it --rm \
+  -e POSTGRES_USER="root" \
+  -e POSTGRES_PASSWORD="root" \
+  -e POSTGRES_DB="ny_taxi" \
+  -v ny_taxi_postgres_data:/var/lib/postgresql \
+  -p 5432:5432 \
+  postgres:18
+```
+![alt text](image-2.png)
+
+```bash
+# this is howe run it using a bind mount
+mkdir ny_taxi_postgres_data
+
+docker run
+  .
+  .
+  . 
+  -v $(pwd)/ny_taxi_postgres_data:/var/lib/postgresql \
+```
+---
+
+## Connecting to Postgres
+We can connect to postgres database using pgcli which we can add to our project easily using uv by running:
+```bash
+# --dev adds the dependencies to the development section in uv which is seperate from production
+uv add --dev pgcli
+```
+Then we can connect to our db:
+```bash
+uv run pgcli -h localhost -p 5434 -u root -d ny_taxi
+# then enter the password
+```
+
+## SQL refresher
+```sql
+-- list tables (schema / name / type / owner)
+\dt
+
+-- Create table called test with 2 columns -> (id of type INTEGER , name of type VARCHAR)
+CREATE TABLE test(id INTEGER , name VARCHAR(50));
+
+-- Insert data -> single quotes for strings because double quotes refers to column/table names
+INSERT INTO test VALUES (1, 'Hello Docker');
+
+-- Retrieving data -> (* is all) equivelant to SELECT id,name FROM test;
+SELECT * FROM test;
+```
+![alt text](image-1.png)
 
