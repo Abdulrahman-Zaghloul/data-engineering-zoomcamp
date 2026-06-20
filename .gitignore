@@ -15,6 +15,10 @@ env/
 # Test Files
 test/
 
+# Notebook cp
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
 # Data files
 *.csv
 *.parquet
